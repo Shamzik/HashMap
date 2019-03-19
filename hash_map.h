@@ -13,31 +13,38 @@ template
 <class KeyType, class ValueType, class Hash = std::hash<KeyType> >
 class HashMap {
 public:
-    Hash _hash_function;
-    std::list<std::pair<const KeyType, ValueType>*> data1;
-    std::vector<typename std::list<std::pair<const KeyType, ValueType>*>::iterator> data;
-    std::vector<size_t> sizes;
-    std::size_t __size;
-    static const size_t k = 19, d = 17;
+	typedef std::pair<const KeyType, ValueType> value_type;
+	typedef value_type* pointer;
+	typedef std::list<pointer> list;
+	typedef typename list::iterator listIterator;
+	typedef typename list::const_iterator listConstIterator;
+	typedef std::size_t size_t;
 
-    void resize(const std::size_t& size) {
-        std::list<std::pair<const KeyType, ValueType>*> _data1 = data1;
-        data1.clear();
+    Hash _hash_function;
+    list data;
+    std::vector<listIterator> iterators;
+    std::vector<size_t> sizes;
+    size_t _size;
+    static const size_t KOEFF = 19, DELTA = 17;
+
+    void resize(const size_t& size) {
+        list oldData = data;
         data.clear();
-        data.resize(size * k, data1.end());
+        iterators.clear();
+        iterators.resize(size * KOEFF, data.end());
         sizes.clear();
-        sizes.resize(data.size());
-        for (std::pair<const KeyType, ValueType>* ptr : _data1) {
-            std::size_t hash = _hash_function(ptr->first) % data.size();
-            data[hash] = data1.insert(data[hash], ptr);
+        sizes.resize(iterators.size());
+        for (pointer ptr : oldData) {
+            size_t hash = _hash_function(ptr->first) % iterators.size();
+            iterators[hash] = data.insert(iterators[hash], ptr);
             ++sizes[hash];
         }
     }
 
-    void insert_without_resize(const std::pair<const KeyType, ValueType>& p) {
-        std::size_t hash = _hash_function(p.first) % data.size();
+    void insert_without_resize(const value_type& p) {
+        size_t hash = _hash_function(p.first) % iterators.size();
         size_t i = 0;
-        typename std::list<std::pair<const KeyType, ValueType>*>::iterator it = data[hash];
+        listIterator it = iterators[hash];
         while (i < sizes[hash]) {
             if ((*it)->first == p.first) {
                 break;
@@ -46,17 +53,17 @@ public:
             ++i;
         }
         if (i == sizes[hash]) {
-            data[hash] = data1.insert(data[hash], new std::pair<const KeyType, ValueType>(p));
+            iterators[hash] = data.insert(iterators[hash], new value_type(p));
             ++sizes[hash];
-            ++__size;
+            ++_size;
         }
     }
 
-    void insert_without_checking(const std::pair<const KeyType, ValueType>& p) {
-        std::size_t hash = _hash_function(p.first) % data.size();
-        data[hash] = data1.insert(data[hash], new std::pair<const KeyType, ValueType>(p));
+    void insert_without_checking(const value_type& p) {
+        size_t hash = _hash_function(p.first) % iterators.size();
+        iterators[hash] = data.insert(iterators[hash], new value_type(p));
         ++sizes[hash];
-        ++__size;
+        ++_size;
     }
 
     template
@@ -69,50 +76,50 @@ public:
 
     HashMap(Hash hash_function = Hash())
         : _hash_function(hash_function)
-        , __size(0)
+        , _size(0)
     {}
 
     template
     <typename Iterator>
     HashMap(Iterator begin, Iterator end, Hash hash_function = Hash())
         : _hash_function(hash_function)
-        , __size(0)
+        , _size(0)
     {
-        std::size_t _size = 0;
+        size_t possibleSize = 0;
         for (Iterator i = begin; i != end; ++i) {
-            ++_size;
+            ++possibleSize;
         }
-        if (_size != 0) {
-            resize(_size);
+        if (possibleSize != 0) {
+            resize(possibleSize);
         }
         insert_without_resize(begin, end);
-        if (size() * k * d < data.size()) {
+        if (size() * KOEFF * DELTA < iterators.size()) {
             resize(size());
         }
     }
 
-    HashMap(const std::initializer_list<std::pair<const KeyType, ValueType>>& list,
+    HashMap(const std::initializer_list<value_type >& list,
             const Hash& hash_function = Hash())
         : _hash_function(hash_function)
-        , __size(0)
+        , _size(0)
     {
         if (list.size() != 0) {
             resize(list.size());
         }
         insert_without_resize(list.begin(), list.end());
-        if (size() * k * d < data.size()) {
+        if (size() * KOEFF * DELTA < iterators.size()) {
             resize(size());
         }
     }
 
     HashMap(const HashMap& other)
         : _hash_function(other.hash_function())
-        , __size(0)
+        , _size(0)
     {
-        if (other.size() * k > data.size() * d) {
+        if (other.size() * KOEFF > iterators.size() * DELTA) {
             resize(other.size());
         }
-        for (const std::pair<const KeyType, ValueType>& p : other) {
+        for (const value_type& p : other) {
             insert_without_checking(p);
         }
     }
@@ -123,10 +130,10 @@ public:
         }
         clear();
         _hash_function = other.hash_function();
-        if (other.size() * k > data.size() * d) {
+        if (other.size() * KOEFF > iterators.size() * DELTA) {
             resize(other.size());
         }
-        for (const std::pair<const KeyType, ValueType>& p : other) {
+        for (const value_type& p : other) {
             insert_without_checking(p);
         }
         return *this;
@@ -136,20 +143,20 @@ public:
         clear();
     }
 
-    std::size_t size() const {
-        return __size;
+    size_t size() const {
+        return _size;
     }
 
     bool empty() const {
-        return data1.empty();
+        return data.empty();
     }
 
     Hash hash_function() const {
         return _hash_function;
     }
 
-    void insert(const std::pair<const KeyType, ValueType>& p) {
-        if ((size() + 1) * k > d * data.size()) {
+    void insert(const value_type& p) {
+        if ((size() + 1) * KOEFF > DELTA * iterators.size()) {
             resize(size() + 1);
         }
         insert_without_resize(p);
@@ -159,9 +166,9 @@ public:
         if (empty()) {
             return;
         }
-        std::size_t hash = _hash_function(key) % data.size();
+        size_t hash = _hash_function(key) % iterators.size();
         size_t i = 0;
-        typename std::list<std::pair<const KeyType, ValueType>*>::iterator it = data[hash];
+        listIterator it = iterators[hash];
         while (i < sizes[hash]) {
             if ((*it)->first == key) {
                 break;
@@ -173,33 +180,31 @@ public:
             delete *it;
             if (i == 0) {
                 if (sizes[hash] > 1) {
-                    ++data[hash];
+                    ++iterators[hash];
                 } else {
-                    data[hash] = data1.end();
+                    iterators[hash] = data.end();
                 }
             }
-            data1.erase(it);
+            data.erase(it);
             --sizes[hash];
-            --__size;
-            if (size() * k * d < data.size()) {
+            --_size;
+            if (size() * KOEFF * DELTA < iterators.size()) {
                 resize(size());
             }
         }
     }
 
     struct iterator {
-        typedef std::pair<const KeyType, ValueType> value_type;
         typedef void difference_type;
-        typedef value_type* pointer;
         typedef value_type& reference;
         typedef std::forward_iterator_tag iterator_category;
 
-        typename std::list<value_type*>::iterator it;
+        typename list::iterator it;
 
         iterator()
         {}
 
-        iterator(typename std::list<value_type*>::iterator it)
+        iterator(typename list::iterator it)
             : it(it)
         {}
 
@@ -232,18 +237,16 @@ public:
     };
 
     struct const_iterator {
-        typedef std::pair<const KeyType, ValueType> value_type;
         typedef void difference_type;
-        typedef value_type* pointer;
         typedef value_type& reference;
         typedef std::forward_iterator_tag iterator_category;
 
-        typename std::list<value_type*>::const_iterator it;
+        listConstIterator it;
 
         const_iterator()
         {}
 
-        const_iterator(typename std::list<value_type*>::const_iterator it)
+        const_iterator(listConstIterator it)
             : it(it)
         {}
 
@@ -276,28 +279,28 @@ public:
     };
 
     iterator begin() {
-        return data1.begin();
+        return data.begin();
     }
 
     iterator end() {
-        return data1.end();
+        return data.end();
     }
 
     const_iterator begin() const {
-        return data1.begin();
+        return data.begin();
     }
 
     const_iterator end() const {
-        return data1.end();
+        return data.end();
     }
 
     iterator find(const KeyType& key) {
         if (empty()) {
             return end();
         }
-        std::size_t hash = _hash_function(key) % data.size();
+        size_t hash = _hash_function(key) % iterators.size();
         size_t i = 0;
-        typename std::list<std::pair<const KeyType, ValueType>*>::iterator it = data[hash];
+        listIterator it = iterators[hash];
         while (i < sizes[hash]) {
             if ((*it)->first == key) {
                 break;
@@ -312,9 +315,9 @@ public:
         if (empty()) {
             return end();
         }
-        std::size_t hash = _hash_function(key) % data.size();
+        size_t hash = _hash_function(key) % iterators.size();
         size_t i = 0;
-        typename std::list<std::pair<const KeyType, ValueType>*>::iterator it = data[hash];
+        listIterator it = iterators[hash];
         while (i < sizes[hash]) {
             if ((*it)->first == key) {
                 break;
@@ -323,7 +326,7 @@ public:
             ++i;
         }
         if (i == sizes[hash]) {return end();}
-        return typename std::list<std::pair<const KeyType, ValueType>*>::const_iterator(it);
+        return listConstIterator(it);
     }
 
     ValueType& operator[](const KeyType& key) {
@@ -331,15 +334,15 @@ public:
         if (it != end()) {
             return it->second;
         }
-        if ((size() + 1) * k > d * data.size()) {
+        if ((size() + 1) * KOEFF > DELTA * iterators.size()) {
             resize(size() + 1);
         }
-        std::size_t hash = _hash_function(key) % data.size();
-        data[hash] =
-            data1.insert(data[hash], new std::pair<const KeyType, ValueType>(key, ValueType()));
+        size_t hash = _hash_function(key) % iterators.size();
+        iterators[hash] =
+            data.insert(iterators[hash], new value_type(key, ValueType()));
         ++sizes[hash];
-        ++__size;
-        return (*data[hash])->second;
+        ++_size;
+        return (*iterators[hash])->second;
     }
 
     const ValueType& at(const KeyType& key) const {
@@ -351,12 +354,12 @@ public:
     }
 
     void clear() {
-        for (std::pair<const KeyType, ValueType>* ptr : data1) {
+        for (pointer ptr : data) {
             delete ptr;
         }
-        data1.clear();
         data.clear();
+        iterators.clear();
         sizes.clear();
-        __size = 0;
+        _size = 0;
     }
 };
