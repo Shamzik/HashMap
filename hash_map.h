@@ -43,16 +43,16 @@ public:
 
     void insert_without_resize(const value_type& p) {
         size_t hash = _hash_function(p.first) % _iterators.size();
-        size_t i = 0;
+        size_t index = 0;
         listIterator it = _iterators[hash];
-        while (i < _sizes[hash]) {
+        while (index < _sizes[hash]) {
             if ((*it)->first == p.first) {
                 break;
             }
             ++it;
-            ++i;
+            ++index;
         }
-        if (i == _sizes[hash]) {
+        if (index == _sizes[hash]) {
             _iterators[hash] = _data.insert(_iterators[hash], new value_type(p));
             ++_sizes[hash];
             ++_size;
@@ -167,18 +167,18 @@ public:
             return;
         }
         size_t hash = _hash_function(key) % _iterators.size();
-        size_t i = 0;
+        size_t index = 0;
         listIterator it = _iterators[hash];
-        while (i < _sizes[hash]) {
+        while (index < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
             }
             ++it;
-            ++i;
+            ++index;
         }
-        if (i != _sizes[hash]) {
+        if (index != _sizes[hash]) {
             delete *it;
-            if (i == 0) {
+            if (index == 0) {
                 if (_sizes[hash] > 1) {
                     ++_iterators[hash];
                 } else {
@@ -299,16 +299,16 @@ public:
             return end();
         }
         size_t hash = _hash_function(key) % _iterators.size();
-        size_t i = 0;
+        size_t index = 0;
         listIterator it = _iterators[hash];
-        while (i < _sizes[hash]) {
+        while (index < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
             }
             ++it;
-            ++i;
+            ++index;
         }
-        return (i == _sizes[hash] ? end() : it);
+        return (index == _sizes[hash] ? end() : it);
     }
 
     const_iterator find(const KeyType& key) const {
@@ -316,16 +316,16 @@ public:
             return end();
         }
         size_t hash = _hash_function(key) % _iterators.size();
-        size_t i = 0;
+        size_t index = 0;
         listIterator it = _iterators[hash];
-        while (i < _sizes[hash]) {
+        while (index < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
             }
             ++it;
-            ++i;
+            ++index;
         }
-        if (i == _sizes[hash]) {return end();}
+        if (index == _sizes[hash]) {return end();}
         return listConstIterator(it);
     }
 
