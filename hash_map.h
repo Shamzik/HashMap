@@ -13,56 +13,56 @@ template
 <class KeyType, class ValueType, class Hash = std::hash<KeyType> >
 class HashMap {
 public:
-	typedef std::pair<const KeyType, ValueType> value_type;
-	typedef value_type* pointer;
-	typedef std::list<pointer> list;
-	typedef typename list::iterator listIterator;
-	typedef typename list::const_iterator listConstIterator;
-	typedef std::size_t size_t;
+    typedef std::pair<const KeyType, ValueType> value_type;
+    typedef value_type* pointer;
+    typedef std::list<pointer> list;
+    typedef typename list::iterator listIterator;
+    typedef typename list::const_iterator listConstIterator;
+    typedef std::size_t size_t;
 
     Hash _hash_function;
-    list data;
-    std::vector<listIterator> iterators;
-    std::vector<size_t> sizes;
+    list _data;
+    std::vector<listIterator> _iterators;
+    std::vector<size_t> _sizes;
     size_t _size;
     static const size_t KOEFF = 19, DELTA = 17;
 
     void resize(const size_t& size) {
-        list oldData = data;
-        data.clear();
-        iterators.clear();
-        iterators.resize(size * KOEFF, data.end());
-        sizes.clear();
-        sizes.resize(iterators.size());
+        list oldData = _data;
+        _data.clear();
+        _iterators.clear();
+        _iterators.resize(size * KOEFF, _data.end());
+        _sizes.clear();
+        _sizes.resize(_iterators.size());
         for (pointer ptr : oldData) {
-            size_t hash = _hash_function(ptr->first) % iterators.size();
-            iterators[hash] = data.insert(iterators[hash], ptr);
-            ++sizes[hash];
+            size_t hash = _hash_function(ptr->first) % _iterators.size();
+            _iterators[hash] = _data.insert(_iterators[hash], ptr);
+            ++_sizes[hash];
         }
     }
 
     void insert_without_resize(const value_type& p) {
-        size_t hash = _hash_function(p.first) % iterators.size();
+        size_t hash = _hash_function(p.first) % _iterators.size();
         size_t i = 0;
-        listIterator it = iterators[hash];
-        while (i < sizes[hash]) {
+        listIterator it = _iterators[hash];
+        while (i < _sizes[hash]) {
             if ((*it)->first == p.first) {
                 break;
             }
             ++it;
             ++i;
         }
-        if (i == sizes[hash]) {
-            iterators[hash] = data.insert(iterators[hash], new value_type(p));
-            ++sizes[hash];
+        if (i == _sizes[hash]) {
+            _iterators[hash] = _data.insert(_iterators[hash], new value_type(p));
+            ++_sizes[hash];
             ++_size;
         }
     }
 
     void insert_without_checking(const value_type& p) {
-        size_t hash = _hash_function(p.first) % iterators.size();
-        iterators[hash] = data.insert(iterators[hash], new value_type(p));
-        ++sizes[hash];
+        size_t hash = _hash_function(p.first) % _iterators.size();
+        _iterators[hash] = _data.insert(_iterators[hash], new value_type(p));
+        ++_sizes[hash];
         ++_size;
     }
 
@@ -93,7 +93,7 @@ public:
             resize(possibleSize);
         }
         insert_without_resize(begin, end);
-        if (size() * KOEFF * DELTA < iterators.size()) {
+        if (size() * KOEFF * DELTA < _iterators.size()) {
             resize(size());
         }
     }
@@ -107,7 +107,7 @@ public:
             resize(list.size());
         }
         insert_without_resize(list.begin(), list.end());
-        if (size() * KOEFF * DELTA < iterators.size()) {
+        if (size() * KOEFF * DELTA < _iterators.size()) {
             resize(size());
         }
     }
@@ -116,7 +116,7 @@ public:
         : _hash_function(other.hash_function())
         , _size(0)
     {
-        if (other.size() * KOEFF > iterators.size() * DELTA) {
+        if (other.size() * KOEFF > _iterators.size() * DELTA) {
             resize(other.size());
         }
         for (const value_type& p : other) {
@@ -130,7 +130,7 @@ public:
         }
         clear();
         _hash_function = other.hash_function();
-        if (other.size() * KOEFF > iterators.size() * DELTA) {
+        if (other.size() * KOEFF > _iterators.size() * DELTA) {
             resize(other.size());
         }
         for (const value_type& p : other) {
@@ -148,7 +148,7 @@ public:
     }
 
     bool empty() const {
-        return data.empty();
+        return _data.empty();
     }
 
     Hash hash_function() const {
@@ -156,7 +156,7 @@ public:
     }
 
     void insert(const value_type& p) {
-        if ((size() + 1) * KOEFF > DELTA * iterators.size()) {
+        if ((size() + 1) * KOEFF > DELTA * _iterators.size()) {
             resize(size() + 1);
         }
         insert_without_resize(p);
@@ -166,29 +166,29 @@ public:
         if (empty()) {
             return;
         }
-        size_t hash = _hash_function(key) % iterators.size();
+        size_t hash = _hash_function(key) % _iterators.size();
         size_t i = 0;
-        listIterator it = iterators[hash];
-        while (i < sizes[hash]) {
+        listIterator it = _iterators[hash];
+        while (i < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
             }
             ++it;
             ++i;
         }
-        if (i != sizes[hash]) {
+        if (i != _sizes[hash]) {
             delete *it;
             if (i == 0) {
-                if (sizes[hash] > 1) {
-                    ++iterators[hash];
+                if (_sizes[hash] > 1) {
+                    ++_iterators[hash];
                 } else {
-                    iterators[hash] = data.end();
+                    _iterators[hash] = _data.end();
                 }
             }
-            data.erase(it);
-            --sizes[hash];
+            _data.erase(it);
+            --_sizes[hash];
             --_size;
-            if (size() * KOEFF * DELTA < iterators.size()) {
+            if (size() * KOEFF * DELTA < _iterators.size()) {
                 resize(size());
             }
         }
@@ -279,53 +279,53 @@ public:
     };
 
     iterator begin() {
-        return data.begin();
+        return _data.begin();
     }
 
     iterator end() {
-        return data.end();
+        return _data.end();
     }
 
     const_iterator begin() const {
-        return data.begin();
+        return _data.begin();
     }
 
     const_iterator end() const {
-        return data.end();
+        return _data.end();
     }
 
     iterator find(const KeyType& key) {
         if (empty()) {
             return end();
         }
-        size_t hash = _hash_function(key) % iterators.size();
+        size_t hash = _hash_function(key) % _iterators.size();
         size_t i = 0;
-        listIterator it = iterators[hash];
-        while (i < sizes[hash]) {
+        listIterator it = _iterators[hash];
+        while (i < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
             }
             ++it;
             ++i;
         }
-        return (i == sizes[hash] ? end() : it);
+        return (i == _sizes[hash] ? end() : it);
     }
 
     const_iterator find(const KeyType& key) const {
         if (empty()) {
             return end();
         }
-        size_t hash = _hash_function(key) % iterators.size();
+        size_t hash = _hash_function(key) % _iterators.size();
         size_t i = 0;
-        listIterator it = iterators[hash];
-        while (i < sizes[hash]) {
+        listIterator it = _iterators[hash];
+        while (i < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
             }
             ++it;
             ++i;
         }
-        if (i == sizes[hash]) {return end();}
+        if (i == _sizes[hash]) {return end();}
         return listConstIterator(it);
     }
 
@@ -334,15 +334,15 @@ public:
         if (it != end()) {
             return it->second;
         }
-        if ((size() + 1) * KOEFF > DELTA * iterators.size()) {
+        if ((size() + 1) * KOEFF > DELTA * _iterators.size()) {
             resize(size() + 1);
         }
-        size_t hash = _hash_function(key) % iterators.size();
-        iterators[hash] =
-            data.insert(iterators[hash], new value_type(key, ValueType()));
-        ++sizes[hash];
+        size_t hash = _hash_function(key) % _iterators.size();
+        _iterators[hash] =
+            _data.insert(_iterators[hash], new value_type(key, ValueType()));
+        ++_sizes[hash];
         ++_size;
-        return (*iterators[hash])->second;
+        return (*_iterators[hash])->second;
     }
 
     const ValueType& at(const KeyType& key) const {
@@ -354,12 +354,12 @@ public:
     }
 
     void clear() {
-        for (pointer ptr : data) {
+        for (pointer ptr : _data) {
             delete ptr;
         }
-        data.clear();
-        iterators.clear();
-        sizes.clear();
+        _data.clear();
+        _iterators.clear();
+        _sizes.clear();
         _size = 0;
     }
 };
