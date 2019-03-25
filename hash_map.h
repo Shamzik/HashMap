@@ -16,13 +16,13 @@ public:
     typedef std::pair<const KeyType, ValueType> value_type;
     typedef value_type* pointer;
     typedef std::list<pointer> list;
-    typedef typename list::iterator listIterator;
-    typedef typename list::const_iterator listConstIterator;
+    typedef typename list::iterator list_iterator;
+    typedef typename list::const_iterator list_const_iterator;
     typedef std::size_t size_t;
 
     Hash _hash_function;
     list _data;
-    std::vector<listIterator> _iterators;
+    std::vector<list_iterator> _iterators;
     std::vector<size_t> _sizes;
     size_t _size;
     static const size_t KOEFF = 19, DELTA = 17;
@@ -44,7 +44,7 @@ public:
     void insert_without_resize(const value_type& p) {
         size_t hash = _hash_function(p.first) % _iterators.size();
         size_t index = 0;
-        listIterator it = _iterators[hash];
+        list_iterator it = _iterators[hash];
         while (index < _sizes[hash]) {
             if ((*it)->first == p.first) {
                 break;
@@ -168,7 +168,7 @@ public:
         }
         size_t hash = _hash_function(key) % _iterators.size();
         size_t index = 0;
-        listIterator it = _iterators[hash];
+        list_iterator it = _iterators[hash];
         while (index < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
@@ -241,12 +241,12 @@ public:
         typedef value_type& reference;
         typedef std::forward_iterator_tag iterator_category;
 
-        listConstIterator it;
+        list_const_iterator it;
 
         const_iterator()
         {}
 
-        const_iterator(listConstIterator it)
+        const_iterator(list_const_iterator it)
             : it(it)
         {}
 
@@ -300,7 +300,7 @@ public:
         }
         size_t hash = _hash_function(key) % _iterators.size();
         size_t index = 0;
-        listIterator it = _iterators[hash];
+        list_iterator it = _iterators[hash];
         while (index < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
@@ -317,7 +317,7 @@ public:
         }
         size_t hash = _hash_function(key) % _iterators.size();
         size_t index = 0;
-        listIterator it = _iterators[hash];
+        list_iterator it = _iterators[hash];
         while (index < _sizes[hash]) {
             if ((*it)->first == key) {
                 break;
@@ -326,7 +326,7 @@ public:
             ++index;
         }
         if (index == _sizes[hash]) {return end();}
-        return listConstIterator(it);
+        return list_const_iterator(it);
     }
 
     ValueType& operator[](const KeyType& key) {
